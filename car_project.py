@@ -23,13 +23,15 @@ units=us.units
 speed_reduction = 1
 while True:
     direction = line_sensor.getMovement()
+    print(direction)
     speed = getSpeed(us.value()/10)
-    if direction != 0 and speed_reduction < 10:
-        speed = speed / speed_reduction
-        speed_reduction += 1
-    elif direction == 0 and speed_reduction > 1:
-        speed_reduction -= 1
+    if (direction > 10 or direction < -10) and speed_reduction < 5:
+        speed_reduction += 0.5
+    elif direction < 10 and direction > -10 and speed_reduction > 1:
+        speed_reduction -= 0.25
+    speed = speed / speed_reduction
+    #print(speed_reduction)
     speed_motor.run_forever(speed_sp = -(MAX_SPEED*speed)/ 2)
     car_direction.steerToDeg(direction)
-    #leds.updateLeds()
+    leds.updateLeds()
     
