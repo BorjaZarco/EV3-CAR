@@ -9,7 +9,10 @@ from direction import Direction, LineSensor
 from speed import getSpeed
 from leds import LED
 
-MAX_SPEED = 750
+def line_detected(direction): 
+    return direction > 10 or direction < -10
+
+MAX_SPEED = 400
 
 # DECLARACIONES
 
@@ -21,17 +24,25 @@ us = UltrasonicSensor(INPUT_3)
 us.mode='US-DIST-CM'
 units=us.units
 speed_reduction = 1
+steering_block = 0
+direction = 0
 while True:
-    direction = line_sensor.getMovement()
-    print(direction)
+    provisional_direction = line_sensor.getMovement()
+    direction = provisional_direction if steering_block < 3.5 else direction
     speed = getSpeed(us.value()/10)
-    if (direction > 10 or direction < -10) and speed_reduction < 5:
-        speed_reduction += 0.5
-    elif direction < 10 and direction > -10 and speed_reduction > 1:
-        speed_reduction -= 0.25
+    
+    if line_detected(provisional_direction): # Detecta Línea
+        steering_block = steering_block + 0.5 if steering_block + 0.5 <= 5 and (provisional_direction < -40 or provisional_direction > 40)  else steering_block
+    elif not line_detected(provisional_direction): # No detecta línea
+        steering_block = steering_block - 0.1 if steering_block  - 0.1 >= 0 else steering_block
+    
+    if line_detected(direction): # Detecta Línea
+        speed_reduction = speed_reduction + 0.5 if speed_reduction + 0.5 <= 5 else speed_reduction
+    elif not line_detected(direction): # No detecta línea
+        speed_reduction = speed_reduction - 0.3 if speed_reduction - 0.3 >= 1 else speed_reduction
+    
     speed = speed / speed_reduction
-    #print(speed_reduction)
-    speed_motor.run_forever(speed_sp = -(MAX_SPEED*speed)/ 2)
+    speed_motor.run_forever(speed_sp = -MAX_SPEED*speed)
     car_direction.steerToDeg(direction)
     leds.updateLeds()
     
